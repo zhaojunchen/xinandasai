@@ -67,7 +67,6 @@ class WechatHook : IXposedHookLoadPackage {
                             var str = XposedHelpers.getObjectField(item, "field_content") as String
                             val str2 = XposedHelpers.getObjectField(item, "field_talker") as String
 //                            val str1 = XposedHelpers.getObjectField(item, "field_transContent") as String
-//                            val str1 = XposedHelpers.getObjectField(item, "field_transContent") as String
                             XposedBridge.log("str::filed_content是什么$str")
 //                            XposedBridge.log("str1::field_transContent$str1")
                             XposedBridge.log("str2::filed_talker是什么$str2")
@@ -111,7 +110,7 @@ object Message : IDatabaseHook {
             val talker: String? = initialValues?.getAsString("talker")
             var message: String? = initialValues?.getAsString("content")
 
-            /** 消息发送  只是针对单个用户的消息进行接收*/
+            /** 消息接收  只是针对单个用户的消息进行接收*/
             if (initialValues?.get("isSend") == 0) {
                 tryVerbosely {
                     if (talker != null && talker.startsWith("wxid_")) {
@@ -119,7 +118,7 @@ object Message : IDatabaseHook {
                         initialValues.put("content", "wxid" + "$message")
                     }
                 }
-                /** 消息接收 只是针对单个用户的消息进行发送修改*/
+                /** 消息发送 只是针对单个用户的消息进行发送修改*/
             } else {
                 if (talker != null && talker.startsWith("wxid_")) {
                     initialValues?.remove("content")
