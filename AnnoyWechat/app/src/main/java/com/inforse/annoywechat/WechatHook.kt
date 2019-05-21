@@ -3,6 +3,7 @@ package com.inforse.annoywechat
 
 import android.app.Activity
 import android.content.ContentValues
+import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.BaseAdapter
@@ -27,6 +28,27 @@ class WechatHook : IXposedHookLoadPackage {
                     XC_MethodReplacement.returnConstant(true)
                 )
             }
+            XposedBridge.log("----\n"+lpparam.packageName.toString())
+            if (lpparam.packageName.equals("com.tencent.mm.ui.LauncherUI")) {
+
+                XposedHelpers.findAndHookMethod("com.tencent.mm.ui.LauncherUI", lpparam.classLoader,
+                    "onCreate", Bundle::class.java, object : XC_MethodHook() {
+                        @Throws(Throwable::class)
+                        override fun beforeHookedMethod(param: MethodHookParam?) {
+                            val sharedPreferences =
+                                (param!!.thisObject as Activity).getSharedPreferences("com.tencent.mm_preferences", 0)
+                            val login_weixin_username: String? =
+                                sharedPreferences.getString("login_weixin_username", "null")
+                            val last_login_nick_name: String? =
+                                sharedPreferences.getString("last_login_nick_name", "null")
+                            val login_user_name: String? = sharedPreferences.getString("login_user_name", "null")
+                            val last_login_uin: String? = sharedPreferences.getString("last_login_uin", "null")
+                            XposedBridge.log("登录$login_weixin_username+$last_login_nick_name+$login_user_name+$last_login_uin")
+
+                        }
+                    })
+            }
+
             XposedBridge.log("success")
             if (SpellBook.isImportantWechatProcess(lpparam)) {
                 XposedBridge.log("hello,wechat")
