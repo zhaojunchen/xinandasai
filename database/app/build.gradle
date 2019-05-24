@@ -40,5 +40,8 @@ dependencies {
     compileOnly 'de.robv.android.xposed:api:82'
     compileOnly 'de.robv.android.xposed:api:82:sources'
     implementation project(path: ':Cryption')
+//    //数据库调试  chrome://inspect/#devices
+    implementation 'com.facebook.stetho:stetho:1.4.1'
+
 
 }

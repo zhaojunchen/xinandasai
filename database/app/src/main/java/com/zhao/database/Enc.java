@@ -10,7 +10,6 @@ import com.uopen.cryptionkit.utils.Utils;
 
 public class Enc {
 
-
     /** 随机生成对称加密SM4公钥*/
     public static String getKey() {
         byte[] key_byte = new byte[16];
@@ -18,6 +17,11 @@ public class Enc {
         random.nextBytes(key_byte);
         String key = Utils.byteToHex(key_byte);
         return key;
+    }
+
+    public static int getRandom() {
+        SecureRandom ra = new SecureRandom();
+        return ra.nextInt(1000000);
     }
 
 }

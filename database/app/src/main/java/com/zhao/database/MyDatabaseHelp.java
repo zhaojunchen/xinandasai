@@ -25,7 +25,12 @@ public class MyDatabaseHelp extends SQLiteOpenHelper {
             " FriendTable(wxid TEXT,id INTEGER PRIMARY KEY" +
             " , note TEXT, public_key TEXT, isEnc INTEGER, " +
             "isDec INTEGER, BELONG INTEGER);";
+
     private static String INDEX = "CREATE INDEX index_name on FriendTable (wxid);";
+
+    private static String link_table = "CREATE TABLE IF NOT EXISTS linktable(" +
+            "wxid TEXT ,public_key TEXT,belong INTEGER,primary key(wxid,belong))";
+
 
     private Context mcontext;
 
@@ -40,18 +45,20 @@ public class MyDatabaseHelp extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.beginTransaction();
+
         try {
             db.execSQL(KEY_TABLE);
             db.execSQL(FRIEND_TABEL);
             db.execSQL(INDEX);
+            db.execSQL(link_table);
+
             db.setTransactionSuccessful();
             /** 调试*/
-            Log.d(TAG, "onCreate: 数据库版本号" + String.valueOf(db.getVersion()));
-            Log.d(TAG, "onCreate: 数据库版本号" + String.valueOf(db.getVersion()));
+            Log.d(TAG, "onCreate: 数据库版本号" + String.valueOf(MyApplication.getDbversion()));
             Toast.makeText(mcontext, "数据库创建成功", Toast.LENGTH_LONG).show();
         } catch (Exception e) {
             e.printStackTrace();
-            Log.e(TAG, "onCreate:初始化建立数据库出错" );
+            Log.e(TAG, "onCreate:初始化建立数据库出错");
         } finally {
             db.endTransaction();
         }
@@ -65,12 +72,13 @@ public class MyDatabaseHelp extends SQLiteOpenHelper {
         /** 删除这个表*/
         db.beginTransaction();
         try {
-            db.execSQL("drop table KEY_TABLE;" );
-            db.execSQL("drop table FRIEND_TABEL;" );
+            db.execSQL("drop table HOSTS;");
+            db.execSQL("drop table FriendTable;");
+            db.execSQL("drop table linktable");
             db.setTransactionSuccessful();
         } catch (Exception e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             db.endTransaction();
         }
 

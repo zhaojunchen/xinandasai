@@ -3,6 +3,9 @@ package com.zhao.database;
 import android.app.Application;
 import android.content.Context;
 
+import com.facebook.stetho.Stetho;
+
+
 public class MyApplication extends Application {
     private static Context context;
     /**
@@ -15,17 +18,21 @@ public class MyApplication extends Application {
 
     private static String CURRENT_NICK_NAME;
     private static int CURRENT_USER_ID;
-    private static int dbversion = 2;
+    private static int dbversion = 5;
 
     public static int getDbversion() {
         return dbversion;
+
     }
 
     @Override
     public void onCreate() {
         context = getApplicationContext();
         /** 解决Aplication冲突的问题*/
+        Stetho.initializeWithDefaults(this);
+
     }
+
 
     public static String getCurrentNickName() {
         return CURRENT_NICK_NAME;

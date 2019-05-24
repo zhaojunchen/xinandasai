@@ -3,7 +3,6 @@ package com.zhao.database;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -18,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
 
         /** 程序的版本信息设置*/
         float nowVersionCode = getVersionName(this);
@@ -29,26 +29,24 @@ public class MainActivity extends AppCompatActivity {
         /** 首次安装程序*/
         if (spVersionCode == 0) {
             /** 生成唯一的秘钥对*/
-            initDatabase();
-            Log.e(TAG, "onCreate: 在此处生成唯一的秘钥对" );
+            Log.e(TAG, "onCreate: 在此处生成唯一的秘钥对");
         }
         Log.d(TAG, "onCreate:上次程序的版本为" + String.valueOf(spVersionCode));
 
         if (nowVersionCode > spVersionCode) {
             /**加载布局文件*/
-            setContentView(R.layout.activity_main);
             SharedPreferences.Editor edit = sp.edit();
             edit.putFloat("spVersionCode", nowVersionCode);
             edit.commit();
             Toast.makeText(this, "应用首次启动", Toast.LENGTH_LONG);
-            Log.d(TAG, "应用首次启动" );
+            Log.d(TAG, "应用首次启动");
 
             /**
              * 添加初始化代码
              */
         } else {
-            setContentView(R.layout.activity_main);
-            Log.d(TAG, "onCreate: 几次以上打开程序" );
+
+            Log.d(TAG, "onCreate: 几次以上打开程序");
         }
         Button button = (Button) findViewById(R.id.button);
         button.setOnClickListener(new View.OnClickListener() {
@@ -78,10 +76,4 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void initDatabase() {
-        /** 初始化创建数据库,当数据库创建时之后
-         *  就会以后就不会去调用create()*/
-        MyDatabaseHelp dbhelper = new MyDatabaseHelp(this, "MYDB", null, MyApplication.getDbversion());
-        SQLiteDatabase db = dbhelper.getWritableDatabase();
-    }
 }
