@@ -11,14 +11,14 @@ public class MyApplication extends Application {
     /**
      * 当前用户的wxid身份
      */
-    private static String CURRENT_USER;
+    private static String CURRENT_USER = null;
     /**
      * 当前用户的ID号
      */
 
     private static String CURRENT_NICK_NAME;
-    private static int CURRENT_USER_ID;
-    private static int dbversion = 5;
+    private static int CURRENT_USER_ID = -1;
+    private static int dbversion = 10;
 
     public static int getDbversion() {
         return dbversion;
@@ -32,7 +32,6 @@ public class MyApplication extends Application {
         Stetho.initializeWithDefaults(this);
 
     }
-
 
     public static String getCurrentNickName() {
         return CURRENT_NICK_NAME;

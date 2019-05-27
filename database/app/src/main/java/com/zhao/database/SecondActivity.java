@@ -48,7 +48,7 @@ public class SecondActivity extends AppCompatActivity {
                 cursor.close();
             }
             return;
-        }finally {
+        } finally {
             db.endTransaction();
         }
 
@@ -56,12 +56,12 @@ public class SecondActivity extends AppCompatActivity {
             cursor.moveToFirst();
             do {
                 User user = new User();
-                int id = cursor.getInt(cursor.getColumnIndex("id" ));
-                String wxid = cursor.getString(cursor.getColumnIndex("wxid" ));
-                String note = cursor.getString(cursor.getColumnIndex("note" ));
-                boolean isEnc = (cursor.getInt(cursor.getColumnIndex("isEnc" ))) == 0 ? false : true;
-                boolean isDec = (cursor.getInt(cursor.getColumnIndex("isDec" ))) == 0 ? false : true;
-                int BELONG = cursor.getInt(cursor.getColumnIndex("BELONG" ));
+                int id = cursor.getInt(cursor.getColumnIndex("id"));
+                String wxid = cursor.getString(cursor.getColumnIndex("wxid"));
+                String note = cursor.getString(cursor.getColumnIndex("note"));
+                boolean isEnc = (cursor.getInt(cursor.getColumnIndex("isEnc"))) == 0 ? false : true;
+                boolean isDec = (cursor.getInt(cursor.getColumnIndex("isDec"))) == 0 ? false : true;
+                int BELONG = cursor.getInt(cursor.getColumnIndex("BELONG"));
                 user.setId(id);
                 user.setId(id);
                 user.setWxid(wxid);
