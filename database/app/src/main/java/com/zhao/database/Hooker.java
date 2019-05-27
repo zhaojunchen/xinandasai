@@ -33,12 +33,9 @@ import com.zhao.database.Enc;
  * 始终都只会有一个对象来hook这些函数
  */
 public class Hooker implements IXposedHookLoadPackage {
-    private static AbstractCoder cipher = EncryptionManager.getCipher(EncryptionManager.Model.SM4);
     SQLiteDatabase db = null;
     SQLiteDatabase db_readonly = null;
     private static Context launch_context = null;
-    private static String socket = null;
-    public static String key = Enc.getKey();
     private String prefix = "-------@";
 
 
@@ -158,11 +155,20 @@ public class Hooker implements IXposedHookLoadPackage {
                              * 随机值测试生命周期
                              */
                             private int live = Enc.getRandom();
+                            AbstractCoder cipher = EncryptionManager.getCipher(EncryptionManager.Model.SM4);
                             /** 优化数据库查询语句   null是代表某些参数被修改*/
                             private String lasttalker = "lasttalker";
-                            private String sm4key = null;
+                            private String talker = null;
+                            private String content = null;
+                            private int isSend;
 
+                            private Object object = null;
+                            private String table = null;
+                            private String nullColumnHack = null;
+                            private ContentValues initialValues = null;
+                            private String sm4key = null;
                             private Cursor cursor = null;
+                            private String socket = null;
 
                             @Override
                             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
@@ -180,10 +186,10 @@ public class Hooker implements IXposedHookLoadPackage {
 
                                 XposedBridge.log("微信号拥有者" + MyApplication.getCurrentUser() + "\nID" + String.valueOf(MyApplication.getCurrentUserId()));
 
-                                Object object = param.thisObject;
-                                String table = (String) param.args[0];
-                                String nullColumnHack = (String) param.args[1];
-                                ContentValues initialValues = (ContentValues) param.args[2];
+                                object = param.thisObject;
+                                table = (String) param.args[0];
+                                nullColumnHack = (String) param.args[1];
+                                initialValues = (ContentValues) param.args[2];
 
                                 //XposedBridge.log("para class:" + param.getClass().toString());
                                 XposedBridge.log("当前对象:" + object.toString());
@@ -198,7 +204,7 @@ public class Hooker implements IXposedHookLoadPackage {
                                         return;
                                     }
                                     //获取用户名
-                                    String talker = initialValues.getAsString("talker");
+                                    talker = initialValues.getAsString("talker");
                                     XposedBridge.log("talker:" + talker);
 
 
@@ -210,8 +216,9 @@ public class Hooker implements IXposedHookLoadPackage {
                                         return;
                                     }
                                     //获取消息
-                                    String content = initialValues.getAsString("content");
-                                    XposedBridge.log("content" + content);
+                                    content = initialValues.getAsString("content");
+                                    isSend = initialValues.getAsInteger("isSend");
+                                    XposedBridge.log("原文content" + content);
 
                                     /******************************
                                      * 在此分支建立加密的对话
@@ -220,8 +227,28 @@ public class Hooker implements IXposedHookLoadPackage {
                                         /** 通过socket==null？来控制content的消息
                                          *  从而控制对话机建立二人之间的加密连接秘钥*/
                                         XposedBridge.log("发起一个挑战");
-                                        socket = challenge(content, talker, db);
-                                        XposedBridge.log("待发送的socket?" + socket);
+                                        if (content.equals("建立连接")) {
+                                            socket = challenge(talker, db);
+                                        } else if (content.startsWith("建立连接@PK")) {
+                                            socket = challenge_3(content, talker, db);
+                                        } else if (content.startsWith("建立连接@一方连接已建立")) {
+                                            /** 发送者*/
+                                            if (isSend == 0) {
+                                                socket = challenge_2(content, talker, db);
+                                            } else {
+                                                //对发送者不做任何的修改
+                                                return;
+                                            }
+
+                                        } else {
+                                            socket = null;
+                                        }
+                                        if (socket != null) {
+                                            XposedBridge.log("待发送的socket?" + socket);
+                                        } else {
+                                            XposedBridge.log("socket is null");
+                                        }
+
                                         /** 将通信的socket发送到别人手机上*/
                                     }
 
@@ -236,6 +263,15 @@ public class Hooker implements IXposedHookLoadPackage {
                                         socket = null;      //销毁socket防止正常消息被过滤
                                         return;             //直接替换消息 发送连接语言
                                     }
+                                    if (isSend == 0) {
+                                        return;
+                                    }
+
+                                    /** 针对发送消息的加密模块*/
+
+
+                                    /** lasttalker 基于时间空间
+                                     * 局部性优化数据库查询*/
 
                                     if (!lasttalker.equals(talker)) {
                                         cursor = db.rawQuery("select public_key from FriendTable where wxid =? and BELONG = ?;", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
@@ -245,15 +281,21 @@ public class Hooker implements IXposedHookLoadPackage {
                                             return;
                                         }
                                         sm4key = cursor.getString(0);
+                                        XposedBridge.log("网络传输加密的秘钥" + sm4key);
                                     }
 
+                                    /** 加密只是是针对发送的时候加密
+                                     * 对于别人发送的消息我们是不加密
+                                     * 否则在解密的是造成二次加密一次解密*/
                                     //查询返回的SM4秘钥
 
+                                    XposedBridge.log("使用上次的key");
                                     lasttalker = talker;            //这儿貌似没有漏洞
                                     initialValues.remove("content");
                                     /** 替换内容为加密之后的密文
                                      * 并添加前缀区分明密文明文*/
-                                    initialValues.put("content", prefix + cipher.simpleEnCode(content, key));
+                                    XposedBridge.log("明文原文:" + content);
+                                    initialValues.put("content", prefix + cipher.simpleEnCode(content, sm4key));
 
                                 }
 
@@ -261,7 +303,7 @@ public class Hooker implements IXposedHookLoadPackage {
                             }
                         });
 
-        /*****************************************************************
+        /******************************************************************
          * 对象说明:wechat获取到com.tencent.mm.ui.chatting.a.a的包名时候，注册对象
          * 这个对象的生命周期wechat的生命周期一致, note:通过随机数的直来检对象的生命周期
          * ****************************************************************/
@@ -271,6 +313,7 @@ public class Hooker implements IXposedHookLoadPackage {
 
                         XC_MethodHook() {
                             private Cursor cursor = null;   //只读数据库操作游标实例
+                            AbstractCoder cipher = EncryptionManager.getCipher(EncryptionManager.Model.SM4);
 
                             /**************************************
                              * 函数说明:当wechat调用适配器刷新界面就会调用
@@ -310,6 +353,7 @@ public class Hooker implements IXposedHookLoadPackage {
                                 if (!cursor.moveToNext()) {
                                     /** 未找到加密记录
                                      * 直接退出函数*/
+                                    XposedBridge.log("未建立加密连接");
                                     return;
                                 }
                                 //公钥的解密秘钥
@@ -327,11 +371,19 @@ public class Hooker implements IXposedHookLoadPackage {
                                     if (XposedHelpers.getIntField(item, "field_type") == 1) {
 
                                         content = (String) XposedHelpers.getObjectField(item, "field_content");
+                                        XposedBridge.log("显示原生" + content);
 
                                         if (!content.startsWith(prefix)) {
                                             XposedBridge.log("不对非加密内容负责");
                                         } else {
-                                            XposedHelpers.setObjectField(item, "field_content", cipher.simpleDeCode(content.substring(8), key));
+                                            XposedBridge.log("content" + content);
+                                            XposedBridge.log("解密显示的秘钥:" + key);
+                                            content = content.substring(8);
+                                            XposedBridge.log("刷新之前" + content);
+                                            XposedBridge.log("长度" + content.length());
+                                            String decode = cipher.simpleDeCode(content, key);
+                                            XposedHelpers.setObjectField(item, "field_content", decode);
+                                            XposedBridge.log((String) XposedHelpers.getObjectField(item, "field_content"));
                                         }
 
                                     }
@@ -340,150 +392,102 @@ public class Hooker implements IXposedHookLoadPackage {
                         });
     }
 
-    private String challenge(String content, String talker, SQLiteDatabase db) {
 
-        XposedBridge.log("进入挑战函数");
-        String[] split_content = content.split("@");
-        String public_key;
-        AbstractCoder cipher_sm2 = EncryptionManager.getCipher(EncryptionManager.Model.SM2);
-        Cursor cursor = null;
-        Cursor cursor1 = null;
-        XposedBridge.log("让我们来看一下这个数据库");
+    /**
+     * 当content = "建立连接"
+     */
+    private String challenge(String talker, SQLiteDatabase db) {
+        XposedBridge.log("进入challenge");
+        XposedBridge.log("数据库");
         Database.show(db);
-        /****************************
-         * 处理来自自己的链接请求
-         * **************************/
-        if (split_content.length == 1) {
-            //查询好友的公钥表  查看公钥是否在库
-            //在库则建立已经建立公钥链接但可能没建立通信连接
-            XposedBridge.log("断言:" + split_content.length);
-            cursor = db.rawQuery("select public_key from linktable where wxid =? and belong = ?", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
-            /** 公钥在库*/
+
+        AbstractCoder cipher_sm2 = EncryptionManager.getCipher(EncryptionManager.Model.SM2);
+
+        Cursor cursor = null;
+        //无公钥信息保存 将自己的公钥发送给好友
+        cursor = db.rawQuery("SELECT public_key FROM HOSTS where WXID=?;", new String[]{MyApplication.getCurrentUser()});
+        cursor.moveToNext();
+        String public_ley = cursor.getString(0);
+
+
+        cursor = db.rawQuery("select public_key from linktable where wxid =? and belong = ?", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
+        /** 公钥在库*/
+        if (cursor.moveToNext()) {
             if (cursor.moveToNext()) {
                 /** 链接已建立*/
-                Cursor mycursor = db.rawQuery("select * from FriendTable where wxid = ? and BELONG=?;", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
+                Cursor mycursor = db.rawQuery("select public_key from FriendTable where wxid = ? and BELONG=?;", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
                 if (mycursor.moveToNext()) {
-                    mycursor.close();
-                    cursor.close();
-                    return "建立连接@连接已建立";
+                    String PK = mycursor.getString(0);
+                    String sm2_key = cipher_sm2.simpleEnCode(cursor.getString(0), mycursor.getString(0));
+                    return "建立连接@一方连接已建立" + sm2_key;
+                    /**直接发送sm2加密的公钥去匹配*/
                 }
-                //链接不在库的库的话  再次尝试建立连接 组织挑战语言
-
-                public_key = cursor.getString(0);
-
-                /**随机生成公钥*/
-                String key = Enc.getKey();
-                /** sm2加密方式 非对称加密秘钥*/
-
-                String key_by_sm2 = cipher_sm2.simpleEnCode(key, public_key);
-
-                /** 插入数据库*/
-                db.execSQL("insert into FriendTable (wxid,note,public_key,isEnc,isDec,BELONG) values(?,?,?,?,?,?);", new String[]{
-                        talker, talker, key, String.valueOf(1), String.valueOf(1), String.valueOf(MyApplication.getCurrentUserId())
-                });
-
-                cursor = db.rawQuery("select public_key from linktable where wxid =? and belong = ?", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
-                if (!cursor.moveToNext()) {
-                    return "添加错误";
-                }
-
-                //组织挑战的返回语句
-
-                return "建立连接@SM2KEY" + key_by_sm2;
-
-                //查看是否建立了连接
-            } else {
-                //无公钥信息保存 将自己的公钥发送给好友
-                cursor1 = db.rawQuery("SELECT public_key FROM HOSTS where WXID=?;", new String[]{MyApplication.getCurrentUser()});
-
-                /*private static String KEY_TABLE = "CREATE TABLE IF NOT EXISTS" +
-                        " HOSTS(id INTEGER PRIMARY KEY AUTOINCREMENT,WXID TEXT,NICKNAME TEXT,private_key " +
-                        "TEXT,public_key TEXT);";*/
-                if (!cursor1.moveToNext()) {
-                    XposedBridge.log("自己的公钥表建立错误");
-                    return "自己的公钥表建立错误";
-                }
-                public_key = cursor1.getString(0);
-                XposedBridge.log("public_key" + public_key);
-                return "建立连接@PK" + public_key;
+                return "error";
             }
+        } else {
+            return "建立连接@PK" + public_ley;
         }
-
-        if (split_content.length >= 2) {
-            String link = split_content[1];
-            if (link.startsWith("PK")) {
-                link = link.substring(2);
-                //判断公钥是否在库
-                cursor = db.rawQuery("SELECT public_key FROM linktable where wxid =? and belong = ?", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
-
-                /** 公钥不在库 则添加到库*/
-                if (!cursor.moveToNext()) {
-                    db.execSQL("insert into linktable (wxid,public_key,belong) values(?,?,?)", new String[]{talker, link, String.valueOf(MyApplication.getCurrentUserId())});
-                }
-                /** 组织发送的链接语言(已知对方公钥)*/
-
-                String key = Enc.getKey();
-                /** sm2加密方式 非对称加密秘钥*/
-
-                String key_by_sm2 = cipher_sm2.simpleEnCode(key, link);
-
-                /** 插入数据库*/
-                db.execSQL("insert into FriendTable (wxid,note,public_key,isEnc,isDec,BELONG) values(?,?,?,?,?,?);", new String[]{
-                        talker, talker.substring(5), key, String.valueOf(1), String.valueOf(1), String.valueOf(MyApplication.getCurrentUserId())
-                });
-                return "建立连接@SM2KEY" + key_by_sm2;
-
-            } else if (link.startsWith("SM2KEY")) {
-                link = link.substring(6);
-                /** 此时接收到来自对方的加密秘钥*/
-                /** 解密并添加到自己的数据库*/
-                cursor = db.rawQuery("select * from FriendTable where wxid = ? and BELONG=?;", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
-                if (cursor.moveToNext()) {
-                    return "建立连接@连接已建立";
-                }
-
-                cursor = db.rawQuery("select private_key from HOSTS where id = ?", new String[]{String.valueOf(MyApplication.getCurrentUserId())});
-                String private_key = null;
-                if (cursor.moveToNext()) {
-                    private_key = cursor.getString(0);
-
-                } else {
-                    XposedBridge.log("Fuck you! Don't be crash!!!");
-                }
-                String decode_key = cipher_sm2.simpleDeCode(link, private_key);
-                /** 添加到数据库*/
-                /** 插入数据库*/
-                db.execSQL("insert into FRIEND_TABEL (wxid,note,public_key,isEnc,isDec,BELONG) values(?,?,?,?,?,?);", new String[]{
-                        talker, talker, decode_key, String.valueOf(1), String.valueOf(1), String.valueOf(MyApplication.getCurrentUserId())
-                });
-                return "建立连接@连接已建立@"+link;
-                    /* private static String KEY_TABLE = "CREATE TABLE IF NOT EXISTS" +
-                        " HOSTS(id INTEGER PRIMARY KEY AUTOINCREMENT,WXID TEXT,NICKNAME TEXT,private_key " +
-                        "TEXT,public_key TEXT);";
-
-                private static String FRIEND_TABEL = "CREATE TABLE IF NOT EXISTS" +
-                        " FriendTable(wxid TEXT,id INTEGER PRIMARY KEY" +
-                        " , note TEXT, public_key TEXT, isEnc INTEGER, " +
-                        "isDec INTEGER, BELONG INTEGER);";
-
-                private static String INDEX = "CREATE INDEX index_name on FriendTable (wxid);";
-
-                private static String link_table = "CREATE TABLE IF NOT EXISTS linktable(" +
-            "wxid TEXT ,public_key TEXT,belong INTEGER,primary key(wxid,belong))";*/
-
-            } else if (link.equals("连接已建立")) {
-
-                cursor = db.rawQuery("select * from FriendTable where wxid = ? and BELONG=?;", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
-                if (cursor.moveToNext()) {
-                    return "建立连接@我也是!!!成功,我们开始加密通信吧";
-                } else {
-                    return "程序有bug. 哇我不想调试啊. 亲爱的!";
-                }
-            }
-
-        }
-        return null;
-
-
+        /** 不在库*/
+        return "error";
     }
+
+    /**
+     * PK操作
+     */
+    private String challenge_3(String content, String talker, SQLiteDatabase db) {
+        XposedBridge.log("进入challenge_3");
+        XposedBridge.log("数据库");
+        Database.show(db);
+
+        AbstractCoder cipher_sm2 = EncryptionManager.getCipher(EncryptionManager.Model.SM2);
+        String pk = content.substring(7);
+
+        Cursor cursor = null;
+        //无公钥信息保存 将自己的公钥发送给好友
+        cursor = db.rawQuery("SELECT public_key FROM HOSTS where WXID=?;", new String[]{MyApplication.getCurrentUser()});
+        cursor.moveToNext();
+        String public_ley = cursor.getString(0);
+
+
+        cursor = db.rawQuery("select public_key from FriendTable where wxid = ? and BELONG=?;", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
+        if (cursor.moveToNext()) {
+
+            String sm2_key = cipher_sm2.simpleEnCode(cursor.getString(0), pk);
+            return "建立连接@一方连接已建立" + sm2_key;
+        } else {
+            /** 添加用户的公钥库*/
+            db.execSQL("insert into linktable (wxid,public_key,belong) values(?,?,?)", new String[]{talker, pk, String.valueOf(MyApplication.getCurrentUserId())});
+            String key = Enc.getKey();
+            db.execSQL("insert into FriendTable (wxid,note,public_key,isEnc,isDec,BELONG) values(?,?,?,?,?,?);", new String[]{
+                    talker, talker.substring(5), key, String.valueOf(1), String.valueOf(1), String.valueOf(MyApplication.getCurrentUserId())
+            });
+
+            String sm2_key = cipher_sm2.simpleEnCode(key, pk);
+            return "建立连接@一方连接已建立" + sm2_key;
+        }
+    }
+
+    private String challenge_2(String content, String talker, SQLiteDatabase db) {
+        XposedBridge.log("进入chllenge3函数,这是我作为挑战者的反馈信号");
+        Cursor cursor = db.rawQuery("select public_key from FriendTable where wxid = ? and BELONG=?;", new String[]{talker, String.valueOf(MyApplication.getCurrentUserId())});
+        /** friendtable已经配置*/
+        if (cursor.moveToNext()) {
+            return "基于Xposed的加密通信已经建立成功";
+        }
+
+        cursor = db.rawQuery("SELECT private_key FROM HOSTS where WXID=?;", new String[]{MyApplication.getCurrentUser()});
+        if (!cursor.moveToNext()) {
+            XposedBridge.log("出现很奇怪的错误");
+        }
+        String private_ley = cursor.getString(0);
+        AbstractCoder cipher_sm2 = EncryptionManager.getCipher(EncryptionManager.Model.SM2);
+        String key = cipher_sm2.simpleDeCode(content.substring(12), private_ley);
+
+        db.execSQL("insert into FriendTable (wxid,note,public_key,isEnc,isDec,BELONG) values(?,?,?,?,?,?);", new String[]{
+                talker, talker.substring(5), key, String.valueOf(1), String.valueOf(1), String.valueOf(MyApplication.getCurrentUserId())
+        });
+
+        return "基于Xposed的加密通信已经建立成功";
+    }
+
 }

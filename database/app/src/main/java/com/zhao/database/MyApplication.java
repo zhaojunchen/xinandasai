@@ -18,7 +18,7 @@ public class MyApplication extends Application {
 
     private static String CURRENT_NICK_NAME;
     private static int CURRENT_USER_ID = -1;
-    private static int dbversion = 10;
+    private static int dbversion = 15;
 
     public static int getDbversion() {
         return dbversion;
