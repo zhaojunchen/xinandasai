@@ -19,7 +19,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(Intent.ACTION_VIEW);
-                intent.setData(Uri.parse("http://www.baidu.com"));
+                intent.setData(Uri.parse("https://github.com/zhaojunchen/xinandasai/tree/master/AnnoyWechat"));
                 startActivity(intent);
             }
         });
