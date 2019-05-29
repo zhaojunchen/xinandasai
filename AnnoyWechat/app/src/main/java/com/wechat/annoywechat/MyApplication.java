@@ -1,4 +1,4 @@
-package com.whu.annoywechat;
+package com.wechat.annoywechat;
 
 import android.app.Application;
 import android.content.Context;

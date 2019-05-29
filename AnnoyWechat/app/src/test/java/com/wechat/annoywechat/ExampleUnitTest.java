@@ -1,4 +1,4 @@
-package com.whu.annoywechat;
+package com.wechat.annoywechat;
 
 import org.junit.Test;
 

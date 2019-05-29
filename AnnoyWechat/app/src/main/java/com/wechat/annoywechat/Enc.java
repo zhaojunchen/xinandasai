@@ -1,4 +1,4 @@
-package com.whu.annoywechat;
+package com.wechat.annoywechat;
 import com.uopen.cryptionkit.utils.Utils;
 
 import java.security.SecureRandom;

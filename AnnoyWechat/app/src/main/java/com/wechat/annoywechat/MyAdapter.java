@@ -1,4 +1,4 @@
-package com.whu.annoywechat;
+package com.wechat.annoywechat;
 
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.NonNull;
@@ -11,9 +11,9 @@ import android.widget.CheckBox;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import static android.widget.Toast.makeText;
-
 import java.util.List;
+
+import static android.widget.Toast.makeText;
 
 /**
  * RecyclerView适配器

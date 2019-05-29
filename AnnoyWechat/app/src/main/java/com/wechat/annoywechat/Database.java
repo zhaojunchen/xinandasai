@@ -1,4 +1,4 @@
-package com.whu.annoywechat;
+package com.wechat.annoywechat;
 
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
