@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">AnnoyWechat</string>
-    <string name="open">打开好友列表</string>
+    <string name="open">打开项目主页</string>
     <string name="welcome">欢迎来到信安大赛</string>
 </resources>
