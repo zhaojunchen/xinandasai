@@ -1,14 +1,14 @@
 # 信安大赛作品AnnotWechat使用说明文档
 ## 1.环境配置及其安装
-###1. **概述说明**
+### 1. **概述说明**
 本作品的运行环境为Android环境,理论上支持VirtualXposed软件的手机均可正常运行本作品。
-###2. **VirtualXposed安装**
+### 2. **VirtualXposed安装**
 以上软件简称vxp（[详细介绍请参见网址](https://vxposed.com/)）,vxp旨在为程序运行提供root环境，作品基于Xposed框架，vxp出现之前Xposed模块的安装和运行的就必须先root Android。vxp就是提供了这样的一个root虚拟环境，但是vxp适配的android版本不是很全面（Android 7支持比较完善，android目前部分支持，但是这个项目目前还是比较有活力的），部分机型无法使用。理论上支vxp的软件设备就支持作品的运行环境。
 ***安装部分***: 打开[官网下载页面](https://github.com/android-hacker/VirtualXposed/releases/tag/v0.17.3)下载最新版的vxp软件，正常安装即可。注：无法安装的手机在安装时可能出现闪退情况。
 
 ![下载界面](http://ww2.sinaimg.cn/large/006tNc79gy1g3ruhirie2j30ty0l3tc6.jpg)
     
-###3. ***安装微信和作品AnnoyWechat***
+### 3. ***安装微信和作品AnnoyWechat***
 
 作品的apk在项目里面（[点击传送门](https://github.com/zhaojunchen/xinandasai/tree/master/AnnoyWechat/app/release)）,下载微信（截止座屏提交日期，微信的版本号早7.04，建议更新到最新版本7.0.4）。 上述的软件正常安装即可。
    
