@@ -16,9 +16,9 @@
 - 添加apk进入vxp
     ![进入设置界面](http://ww2.sinaimg.cn/large/006tNc79gy1g3ruqss2q5j30u01hcadq.jpg)
         
-       ![点击进入添加界面](http://ww1.sinaimg.cn/large/006tNc79gy1g3rus6fxukj30u01hctdb.jpg)
+    ![点击进入添加界面](http://ww1.sinaimg.cn/large/006tNc79gy1g3rus6fxukj30u01hctdb.jpg)
        
-       ![在列表里面添加AnnoyWechat和微信](http://ww3.sinaimg.cn/large/006tNc79gy1g3ruvypydtj30u01hc10b.jpg)
+    ![在列表里面添加AnnoyWechat和微信](http://ww3.sinaimg.cn/large/006tNc79gy1g3ruvypydtj30u01hc10b.jpg)
        
       
     ``` 
